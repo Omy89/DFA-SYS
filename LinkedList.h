@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <stdexcept> 
 
 struct Node {
     std::string data;
@@ -18,7 +19,6 @@ private:
     int size;
 
 public:
-
 
     LinkedList(){
         this->head = nullptr;
