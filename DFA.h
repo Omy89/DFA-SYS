@@ -16,8 +16,16 @@ class DFA {
 public:
 
 
+
 private:
+
+void addState(std::string state) {
+    states.insert(state);
+}
+
+
 
 //Vamos a dormirnos ya, ya es tarde gente.
 //git add git commit git push y a la cama
+//25/08/2026
 };
