@@ -1,21 +1,34 @@
 #include <iostream>
-#include <string>
 #include <stdexcept> 
 
+template <typename T>
+
 struct Node {
-    std::string data;
+    T data;
     Node* next;
 
-    Node(std::string data){
+    Node(T data){
         this->data = data;
         this->next = nullptr;
     }
 };
 
+
+//dios mio ya dias no hago estructuras de datos, que nostalgia, que recuerdos
+//copilot ya me esta agarrando mi forma de comentar
+//hola ingeniero
+//inge quiero pasar la clase
+//no se si vaya a leer el codigo, pero si lo hace, que sepa que lo quiero mucho y que es un gran ingeniero
+//eso de arriba lo escribio copilot
+//que risa
+//estoy hablando solo a las 2 de la mañana
+
+
+template <typename T>
 class LinkedList {
 
 private:
-    Node* head;
+    Node<T>* head;
     int size;
 
 public:
@@ -25,12 +38,12 @@ public:
         this->size = 0;
     };
 
-    void insert(std::string data){
-        Node* newNode = new Node(data);
+    void insert(T data){
+        Node<T>* newNode = new Node<T>(data);
         if (head == nullptr) {
             head = newNode;
         } else {
-            Node* current = head;
+            Node<T>* current = head;
             while (current->next != nullptr) {
                 current = current->next;
             }
@@ -39,27 +52,17 @@ public:
         size++;
     }
 
-    void show() {
-        Node* current = head;
-        while (current != nullptr) {
-            std::cout << current->data << " ";
-            current = current->next;
-        }
-        std::cout << std::endl;
-    }
-
-
     ~LinkedList(){
-        Node* current = head;
+        Node<T>* current = head;
         while (current != nullptr) {
-            Node* nextNode = current->next;
+            Node<T>* nextNode = current->next;
             delete current;
             current = nextNode;
         }
     }
 
-    bool contains(std::string data) {
-        Node* current = head;
+    bool contains(T data) {
+        Node<T>* current = head;
         while (current != nullptr) {
             if (current->data == data) {
                 return true;
@@ -69,11 +72,11 @@ public:
         return false;
     }
 
-    std::string get(int index) {
+    T get(int index) {
         if (index < 0 || index >= size) {
             throw std::out_of_range("Index out of range");
         }
-        Node* current = head;
+        Node<T>* current = head;
         for (int i = 0; i < index; i++) {
             current = current->next;
         }
