@@ -38,6 +38,17 @@ public:
         this->size = 0;
     };
 
+    //para hacer una copia profunda de la lista enlazada
+    LinkedList(const LinkedList<T>& other) {
+        head = nullptr;
+        size = 0;
+        Node<T>* current = other.head;
+        while (current != nullptr) {
+            insert(current->data);
+            current = current->next;
+        }
+    }
+
     void insert(T data){
         Node<T>* newNode = new Node<T>(data);
         if (head == nullptr) {
@@ -63,7 +74,7 @@ public:
 
     bool contains(T data) {
         Node<T>* current = head;
-        while (current != nullptr) {
+        while (current != nullptr) {        
             if (current->data == data) {
                 return true;
             }
