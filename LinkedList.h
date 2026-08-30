@@ -7,10 +7,9 @@ struct Node {
     T data;
     Node* next;
 
-    Node(T data){
-        this->data = data;
-        this->next = nullptr;
-    }
+    //data must be set via the initializer list (not assigned in the body), otherwise
+    //the compiler default-constructs "data" first, which breaks for any T with no default constructor
+    Node(T data) : data(data), next(nullptr) {}
 };
 
 

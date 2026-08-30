@@ -8,27 +8,15 @@ class Transition {
     std::string destination;
 
 public:
-    Transition(std::string origin, std::string symbol, std::string destination) {
-        this->origin = origin;
-        this->symbol = symbol;
-        this->destination = destination;
-    }
+    Transition(std::string origin, std::string symbol, std::string destination);
 
-    void printTransition() {
-        std::cout << "Origin: " << origin << ", Symbol: " << symbol << ", Destination: " << destination << std::endl;
-    }
+    void printTransition();
 
-    std::string getOrigin() {
-        return origin;
-    }
+    std::string getOrigin();
 
-    std::string getSymbol() {
-        return symbol;
-    }
+    std::string getSymbol();
 
-    std::string getDestination() {
-        return destination;
-    }
+    std::string getDestination();
 
 
 };
