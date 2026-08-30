@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <string>
 
@@ -28,5 +29,11 @@ public:
     void addTransition(std::string origin, std::string symbol, std::string destination);
 
     void printDFA();
+
+    LinkedList<std::string> getStates(){
+
+    }
+
+    
 
 };

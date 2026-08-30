@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <stdexcept> 
 
@@ -11,7 +12,6 @@ struct Node {
     //the compiler default-constructs "data" first, which breaks for any T with no default constructor
     Node(T data) : data(data), next(nullptr) {}
 };
-
 
 //dios mio ya dias no hago estructuras de datos, que nostalgia, que recuerdos
 //copilot ya me esta agarrando mi forma de comentar
@@ -96,5 +96,5 @@ public:
     int getSize() {
         return size;
     }
-
+    
 };
