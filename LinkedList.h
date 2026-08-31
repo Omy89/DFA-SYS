@@ -48,6 +48,30 @@ public:
         }
     }
 
+    //rule of three: si hay destructor y copy constructor, tambien hace falta el copy assignment
+    LinkedList<T>& operator=(const LinkedList<T>& other) {
+        if (this == &other) {
+            return *this;
+        }
+
+        Node<T>* current = head;
+        while (current != nullptr) {
+            Node<T>* nextNode = current->next;
+            delete current;
+            current = nextNode;
+        }
+        head = nullptr;
+        size = 0;
+
+        current = other.head;
+        while (current != nullptr) {
+            insert(current->data);
+            current = current->next;
+        }
+
+        return *this;
+    }
+
     void insert(T data){
         Node<T>* newNode = new Node<T>(data);
         if (head == nullptr) {
@@ -82,7 +106,8 @@ public:
         return false;
     }
 
-    T get(int index) {
+    //referencia y no copia: asi se puede editar un elemento del medio de la lista (ej. el DFA seleccionado) sin sacarlo y reinsertarlo
+    T& get(int index) {
         if (index < 0 || index >= size) {
             throw std::out_of_range("Index out of range");
         }
