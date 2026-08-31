@@ -224,6 +224,16 @@ bool DFA::runString(std::string input, LinkedList<std::string>& trace) {
 }
 
 DFA DFA::unionWith(DFA& other, LinkedList<std::string>& errors) {
+    if (!isValid()) {
+        errors.insert("The first DFA is not valid; validate it before computing the union");
+    }
+    if (!other.isValid()) {
+        errors.insert("The second DFA is not valid; validate it before computing the union");
+    }
+    if (errors.getSize() > 0) {
+        return DFA();
+    }
+
     for (int i = 0; i < alphabet.getSize(); i++) {
         std::string symbol = alphabet.get(i);
         if (!other.containsSymbol(symbol)) {

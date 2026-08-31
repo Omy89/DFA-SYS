@@ -174,7 +174,7 @@ QWidget* MainWindow::buildTestPage() {
     QWidget* page = new QWidget();
     QVBoxLayout* layout = new QVBoxLayout(page);
 
-    QGroupBox* testGroup = new QGroupBox("Test String (Cadena)");
+    QGroupBox* testGroup = new QGroupBox("Test String");
     QHBoxLayout* testLayout = new QHBoxLayout();
     testStringInput = new QLineEdit();
     testStringInput->setPlaceholderText("aab");
@@ -319,6 +319,11 @@ void MainWindow::onValidate() {
 }
 
 void MainWindow::onTestString() {
+    if (!currentDfa().isValid()) {
+        QMessageBox::warning(this, "Test String", "This DFA is not valid. Validate it first on the Create DFA tab.");
+        return;
+    }
+
     std::string input = testStringInput->text().toStdString();
     LinkedList<std::string> trace;
     bool accepted = currentDfa().runString(input, trace);
