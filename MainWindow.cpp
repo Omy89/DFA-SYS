@@ -13,6 +13,7 @@
 #include <sstream>
 #include <functional>
 
+//al inicio lo habia hecho en consola, pero pues por el cambio necesite esto.
 static std::string captureCout(std::function<void()> fn) {
     std::ostringstream buffer;
     std::streambuf* old = std::cout.rdbuf(buffer.rdbuf());
@@ -378,7 +379,7 @@ void MainWindow::refreshDeltaView() {
 
         std::string label = state;
         if (state == initial) {
-            label = QString::fromUtf8("→ ").toStdString() + label;
+            label = "->" + label;
         }
         if (finalStates.contains(state)) {
             label = label + " *";

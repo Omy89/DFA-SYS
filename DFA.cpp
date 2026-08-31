@@ -52,6 +52,15 @@ bool DFA::isValidSymbol(std::string symbol) {
     return true;
 }
 
+void DFA::checkNonEmptiness(LinkedList<std::string>& errors) {
+    if (states.getSize() == 0) {
+        errors.insert("The set of states is empty; a DFA must have at least one state");
+    }
+    if (alphabet.getSize() == 0) {
+        errors.insert("The alphabet is empty; a DFA must have at least one symbol");
+    }
+}
+
 void DFA::checkDuplicateStates(LinkedList<std::string>& errors) {
     for (int i = 0; i < states.getSize(); i++) {
         for (int j = i + 1; j < states.getSize(); j++) {
@@ -132,6 +141,7 @@ void DFA::checkTransitionDestinations(LinkedList<std::string>& errors) {
 LinkedList<std::string> DFA::validate() {
     LinkedList<std::string> errors;
 
+    checkNonEmptiness(errors);
     checkDuplicateStates(errors);
     checkDuplicateSymbols(errors);
     checkSymbolValidity(errors);

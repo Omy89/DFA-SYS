@@ -70,6 +70,8 @@ public:
 
 private:
 
+    void checkNonEmptiness(LinkedList<std::string>& errors);
+
     void checkDuplicateStates(LinkedList<std::string>& errors);
 
     void checkDuplicateSymbols(LinkedList<std::string>& errors);
