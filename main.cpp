@@ -5,7 +5,6 @@
 
 #include "MainWindow.h"
 
-//paleta oscura sobre el estilo Fusion, la receta de siempre para que quede oscuro en todos los widgets
 static void applyDarkTheme(QApplication& app) {
     app.setStyle(QStyleFactory::create("Fusion"));
 

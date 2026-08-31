@@ -37,7 +37,6 @@ bool DFA::containsFinalState(std::string state) {
     return finalStates.contains(state);
 }
 
-//simbolos reservados/nulos que el enunciado prohibe en el alfabeto: epsilon, lambda, vacio, espacios y guion
 bool DFA::isValidSymbol(std::string symbol) {
     if (symbol.empty() || symbol == "-" || symbol == "ε" || symbol == "epsilon" || symbol == "λ" || symbol == "lambda") {
         return false;
@@ -53,58 +52,52 @@ bool DFA::isValidSymbol(std::string symbol) {
     return true;
 }
 
-//unicidad de estados: comparacion de cada par con busqueda propia
 void DFA::checkDuplicateStates(LinkedList<std::string>& errors) {
     for (int i = 0; i < states.getSize(); i++) {
         for (int j = i + 1; j < states.getSize(); j++) {
             if (states.get(i) == states.get(j)) {
-                errors.insert("El estado '" + states.get(i) + "' esta duplicado en el conjunto de estados");
+                errors.insert("State '" + states.get(i) + "' is duplicated in the set of states");
             }
         }
     }
 }
 
-//unicidad del alfabeto
 void DFA::checkDuplicateSymbols(LinkedList<std::string>& errors) {
     for (int i = 0; i < alphabet.getSize(); i++) {
         for (int j = i + 1; j < alphabet.getSize(); j++) {
             if (alphabet.get(i) == alphabet.get(j)) {
-                errors.insert("El simbolo '" + alphabet.get(i) + "' esta duplicado en el alfabeto");
+                errors.insert("Symbol '" + alphabet.get(i) + "' is duplicated in the alphabet");
             }
         }
     }
 }
 
-//simbologia valida del alfabeto
 void DFA::checkSymbolValidity(LinkedList<std::string>& errors) {
     for (int i = 0; i < alphabet.getSize(); i++) {
         std::string symbol = alphabet.get(i);
         if (!isValidSymbol(symbol)) {
-            errors.insert("El simbolo '" + symbol + "' no es valido dentro del alfabeto");
+            errors.insert("Symbol '" + symbol + "' is not valid within the alphabet");
         }
     }
 }
 
-//debe existir exactamente un estado inicial y pertenecer al conjunto de estados
 void DFA::checkInitialState(LinkedList<std::string>& errors) {
     if (initialState.empty()) {
-        errors.insert("No se ha definido un estado inicial");
+        errors.insert("No initial state has been defined");
     } else if (!containsState(initialState)) {
-        errors.insert("El estado inicial '" + initialState + "' no pertenece al conjunto de estados");
+        errors.insert("Initial state '" + initialState + "' does not belong to the set of states");
     }
 }
 
-//todo estado final debe pertenecer al conjunto de estados (la lista vacia es valida)
 void DFA::checkFinalStatesMembership(LinkedList<std::string>& errors) {
     for (int i = 0; i < finalStates.getSize(); i++) {
         std::string finalState = finalStates.get(i);
         if (!containsState(finalState)) {
-            errors.insert("El estado final '" + finalState + "' no pertenece al conjunto de estados");
+            errors.insert("Final state '" + finalState + "' does not belong to the set of states");
         }
     }
 }
 
-//completitud y determinismo: cada par (estado, simbolo) debe tener exactamente una transicion
 void DFA::checkTransitionCompleteness(LinkedList<std::string>& errors) {
     for (int i = 0; i < states.getSize(); i++) {
         std::string state = states.get(i);
@@ -119,25 +112,23 @@ void DFA::checkTransitionCompleteness(LinkedList<std::string>& errors) {
             }
 
             if (matches == 0) {
-                errors.insert("El estado '" + state + "' carece de transicion para el simbolo '" + symbol + "'");
+                errors.insert("State '" + state + "' has no transition defined for symbol '" + symbol + "'");
             } else if (matches > 1) {
-                errors.insert("El estado '" + state + "' tiene mas de una transicion para el simbolo '" + symbol + "' (no-determinismo)");
+                errors.insert("State '" + state + "' has more than one transition for symbol '" + symbol + "' (non-determinism)");
             }
         }
     }
 }
 
-//integridad de destino: todo destino de una transicion debe ser un estado registrado
 void DFA::checkTransitionDestinations(LinkedList<std::string>& errors) {
     for (int i = 0; i < transitions.getSize(); i++) {
         Transition transition = transitions.get(i);
         if (!containsState(transition.getDestination())) {
-            errors.insert("El estado de destino '" + transition.getDestination() + "' no esta registrado en el conjunto de estados (origen '" + transition.getOrigin() + "', simbolo '" + transition.getSymbol() + "')");
+            errors.insert("Destination state '" + transition.getDestination() + "' is not registered in the set of states (origin '" + transition.getOrigin() + "', symbol '" + transition.getSymbol() + "')");
         }
     }
 }
 
-//recorre las estructuras manuales y arma el informe de errores del DFA, un chequeo por funcion
 LinkedList<std::string> DFA::validate() {
     LinkedList<std::string> errors;
 
@@ -160,11 +151,11 @@ void DFA::printValidationReport() {
     LinkedList<std::string> errors = validate();
 
     if (errors.getSize() == 0) {
-        std::cout << "El DFA es valido." << std::endl;
+        std::cout << "The DFA is valid." << std::endl;
         return;
     }
 
-    std::cout << "El DFA NO es valido. Errores encontrados:" << std::endl;
+    std::cout << "The DFA is NOT valid. Errors found:" << std::endl;
     for (int i = 0; i < errors.getSize(); i++) {
         std::cout << " - " << errors.get(i) << std::endl;
     }
@@ -197,7 +188,6 @@ void DFA::printDFA() {
     }
 }
 
-//busqueda propia sobre transitions, sin usar find()/algoritmos nativos: recorre y compara origen+simbolo
 std::string DFA::findTransitionDestination(std::string state, std::string symbol, bool& found) {
     for (int i = 0; i < transitions.getSize(); i++) {
         Transition transition = transitions.get(i);
@@ -210,8 +200,6 @@ std::string DFA::findTransitionDestination(std::string state, std::string symbol
     return "";
 }
 
-//delta*(q0, cadena): arranca en delta(q0, epsilon) = q0 (todavia no se consumio nada) y despues aplica delta simbolo por simbolo.
-//se asume que cada simbolo del alfabeto es un solo caracter, que es el caso normal para probar cadenas en un DFA.
 bool DFA::runString(std::string input, LinkedList<std::string>& trace) {
     std::string currentState = initialState;
     trace.insert("δ(" + currentState + ", ε) = " + currentState);
@@ -222,7 +210,7 @@ bool DFA::runString(std::string input, LinkedList<std::string>& trace) {
         std::string nextState = findTransitionDestination(currentState, symbol, found);
 
         if (!found) {
-            trace.insert("δ(" + currentState + ", " + symbol + ") no esta definida -> cadena rechazada");
+            trace.insert("δ(" + currentState + ", " + symbol + ") is not defined -> string rejected");
             return false;
         }
 
@@ -231,8 +219,69 @@ bool DFA::runString(std::string input, LinkedList<std::string>& trace) {
     }
 
     bool accepted = containsFinalState(currentState);
-    trace.insert("Estado final alcanzado: '" + currentState + "' -> " + (accepted ? "es de aceptacion" : "no es de aceptacion"));
+    trace.insert("Final state reached: '" + currentState + "' -> " + (accepted ? "is an accepting state" : "is not an accepting state"));
     return accepted;
+}
+
+DFA DFA::unionWith(DFA& other, LinkedList<std::string>& errors) {
+    for (int i = 0; i < alphabet.getSize(); i++) {
+        std::string symbol = alphabet.get(i);
+        if (!other.containsSymbol(symbol)) {
+            errors.insert("Symbol '" + symbol + "' is in the first alphabet but not in the second");
+        }
+    }
+    for (int i = 0; i < other.alphabet.getSize(); i++) {
+        std::string symbol = other.alphabet.get(i);
+        if (!containsSymbol(symbol)) {
+            errors.insert("Symbol '" + symbol + "' is in the second alphabet but not in the first");
+        }
+    }
+
+    DFA result;
+    if (errors.getSize() > 0) {
+        return result;
+    }
+
+    for (int i = 0; i < alphabet.getSize(); i++) {
+        result.addSymbol(alphabet.get(i));
+    }
+
+    for (int i = 0; i < states.getSize(); i++) {
+        std::string stateA = states.get(i);
+        for (int j = 0; j < other.states.getSize(); j++) {
+            std::string stateB = other.states.get(j);
+            std::string composite = stateA + "," + stateB;
+            result.addState(composite);
+
+            if (containsFinalState(stateA) || other.containsFinalState(stateB)) {
+                result.addFinalState(composite);
+            }
+        }
+    }
+
+    result.setInitialState(initialState + "," + other.initialState);
+
+    for (int i = 0; i < states.getSize(); i++) {
+        std::string stateA = states.get(i);
+        for (int j = 0; j < other.states.getSize(); j++) {
+            std::string stateB = other.states.get(j);
+            std::string composite = stateA + "," + stateB;
+
+            for (int k = 0; k < alphabet.getSize(); k++) {
+                std::string symbol = alphabet.get(k);
+                bool foundA = false;
+                bool foundB = false;
+                std::string destA = findTransitionDestination(stateA, symbol, foundA);
+                std::string destB = other.findTransitionDestination(stateB, symbol, foundB);
+
+                if (foundA && foundB) {
+                    result.addTransition(composite, symbol, destA + "," + destB);
+                }
+            }
+        }
+    }
+
+    return result;
 }
 
 //Vamos a dormirnos ya, ya es tarde gente.

@@ -13,7 +13,6 @@
 #include <sstream>
 #include <functional>
 
-//metodo libre chiquito para capturar lo que printDFA()/printValidationReport() mandan a std::cout
 static std::string captureCout(std::function<void()> fn) {
     std::ostringstream buffer;
     std::streambuf* old = std::cout.rdbuf(buffer.rdbuf());
@@ -22,7 +21,6 @@ static std::string captureCout(std::function<void()> fn) {
     return buffer.str();
 }
 
-//junta un QLineEdit y un QPushButton en una sola fila, para no repetir el mismo layout una y otra vez
 static QWidget* wrapRow(QLineEdit* edit, QPushButton* button) {
     QWidget* row = new QWidget();
     QHBoxLayout* rowLayout = new QHBoxLayout(row);
@@ -32,22 +30,67 @@ static QWidget* wrapRow(QLineEdit* edit, QPushButton* button) {
     return row;
 }
 
+static QWidget* wrapScroll(QWidget* content) {
+    QScrollArea* scrollArea = new QScrollArea();
+    scrollArea->setWidget(content);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    return scrollArea;
+}
+
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), currentIndex(-1) {
     resize(880, 800);
 
-    QWidget* container = new QWidget();
-    QVBoxLayout* mainLayout = new QVBoxLayout(container);
+    QWidget* central = new QWidget();
+    QVBoxLayout* rootLayout = new QVBoxLayout(central);
 
-    //--- selector de DFA: se pueden tener varios en memoria a la vez ---
     QHBoxLayout* selectorRow = new QHBoxLayout();
     dfaSelector = new QComboBox();
     newDfaBtn = new QPushButton("+ New DFA");
     selectorRow->addWidget(new QLabel("DFA:"));
     selectorRow->addWidget(dfaSelector, 1);
     selectorRow->addWidget(newDfaBtn);
-    mainLayout->addLayout(selectorRow);
+    rootLayout->addLayout(selectorRow);
 
-    //--- formulario para armar la quintupla ---
+    QTabWidget* tabs = new QTabWidget();
+    tabs->addTab(buildCreatePage(), "Create DFA");
+    tabs->addTab(buildTestPage(), "Test DFA");
+    rootLayout->addWidget(tabs, 1);
+
+    setCentralWidget(central);
+
+    connect(newDfaBtn, &QPushButton::clicked, this, &MainWindow::onNewDfa);
+    connect(dfaSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onSelectDfa);
+
+    dfaNames.insert("DFA 1");
+    dfas.insert(DFA());
+    unionSourceA.insert(-1);
+    unionSourceB.insert(-1);
+    dfaSelector->addItem("DFA 1");
+    unionASelector->addItem("DFA 1");
+    unionBSelector->addItem("DFA 1");
+    dfaSelector->setCurrentIndex(0);
+    onSelectDfa(0);
+}
+
+QWidget* MainWindow::buildCreatePage() {
+    QWidget* page = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(page);
+
+    QGroupBox* unionGroup = new QGroupBox(QString::fromUtf8("Union (∪)"));
+    QHBoxLayout* unionLayout = new QHBoxLayout();
+    unionASelector = new QComboBox();
+    unionBSelector = new QComboBox();
+    computeUnionBtn = new QPushButton(QString::fromUtf8("Compute A ∪ B"));
+    QLabel* unionOpLabel = new QLabel(QString::fromUtf8("∪"));
+    unionOpLabel->setAlignment(Qt::AlignCenter);
+    unionLayout->addWidget(unionASelector, 1);
+    unionLayout->addWidget(unionOpLabel);
+    unionLayout->addWidget(unionBSelector, 1);
+    unionLayout->addWidget(computeUnionBtn);
+    unionGroup->setLayout(unionLayout);
+    layout->addWidget(unionGroup);
+
     QGroupBox* buildGroup = new QGroupBox("Build DFA");
     QFormLayout* buildLayout = new QFormLayout();
 
@@ -71,7 +114,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), currentIndex(-1) 
     QPushButton* addFinalBtn = new QPushButton("Add Final State");
     buildLayout->addRow("Final State:", wrapRow(finalStateInput, addFinalBtn));
 
-    //fila de transicion en notacion delta: origen -simbolo-> destino
     QWidget* transitionRow = new QWidget();
     QHBoxLayout* transitionLayout = new QHBoxLayout(transitionRow);
     transitionLayout->setContentsMargins(0, 0, 0, 0);
@@ -91,9 +133,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), currentIndex(-1) 
     buildLayout->addRow("Transition:", transitionRow);
 
     buildGroup->setLayout(buildLayout);
-    mainLayout->addWidget(buildGroup);
+    layout->addWidget(buildGroup);
 
-    //--- delta: tabla estados x alfabeto, y la misma info en notacion de flecha ---
     QGroupBox* deltaGroup = new QGroupBox(QString::fromUtf8("δ (Transition Function)"));
     QVBoxLayout* deltaLayout = new QVBoxLayout();
 
@@ -109,9 +150,30 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), currentIndex(-1) 
     deltaLayout->addWidget(deltaList);
 
     deltaGroup->setLayout(deltaLayout);
-    mainLayout->addWidget(deltaGroup);
+    layout->addWidget(deltaGroup);
 
-    //--- probar una cadena contra el DFA seleccionado ---
+    QPushButton* validateBtn = new QPushButton("Validate DFA");
+    layout->addWidget(validateBtn);
+
+    buildLog = new QPlainTextEdit();
+    buildLog->setReadOnly(true);
+    layout->addWidget(buildLog, 1);
+
+    connect(addStateBtn, &QPushButton::clicked, this, &MainWindow::onAddState);
+    connect(addSymbolBtn, &QPushButton::clicked, this, &MainWindow::onAddSymbol);
+    connect(setInitialBtn, &QPushButton::clicked, this, &MainWindow::onSetInitialState);
+    connect(addFinalBtn, &QPushButton::clicked, this, &MainWindow::onAddFinalState);
+    connect(addTransitionBtn, &QPushButton::clicked, this, &MainWindow::onAddTransition);
+    connect(computeUnionBtn, &QPushButton::clicked, this, &MainWindow::onComputeUnion);
+    connect(validateBtn, &QPushButton::clicked, this, &MainWindow::onValidate);
+
+    return wrapScroll(page);
+}
+
+QWidget* MainWindow::buildTestPage() {
+    QWidget* page = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(page);
+
     QGroupBox* testGroup = new QGroupBox("Test String (Cadena)");
     QHBoxLayout* testLayout = new QHBoxLayout();
     testStringInput = new QLineEdit();
@@ -120,36 +182,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), currentIndex(-1) 
     testLayout->addWidget(testStringInput);
     testLayout->addWidget(testStringBtn);
     testGroup->setLayout(testLayout);
-    mainLayout->addWidget(testGroup);
+    layout->addWidget(testGroup);
 
-    QPushButton* validateBtn = new QPushButton("Validate DFA");
-    mainLayout->addWidget(validateBtn);
+    testLog = new QPlainTextEdit();
+    testLog->setReadOnly(true);
+    layout->addWidget(testLog, 1);
 
-    log = new QPlainTextEdit();
-    log->setReadOnly(true);
-    mainLayout->addWidget(log, 1);
-
-    QScrollArea* scrollArea = new QScrollArea();
-    scrollArea->setWidget(container);
-    scrollArea->setWidgetResizable(true);
-    setCentralWidget(scrollArea);
-
-    connect(newDfaBtn, &QPushButton::clicked, this, &MainWindow::onNewDfa);
-    connect(dfaSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onSelectDfa);
-    connect(addStateBtn, &QPushButton::clicked, this, &MainWindow::onAddState);
-    connect(addSymbolBtn, &QPushButton::clicked, this, &MainWindow::onAddSymbol);
-    connect(setInitialBtn, &QPushButton::clicked, this, &MainWindow::onSetInitialState);
-    connect(addFinalBtn, &QPushButton::clicked, this, &MainWindow::onAddFinalState);
-    connect(addTransitionBtn, &QPushButton::clicked, this, &MainWindow::onAddTransition);
-    connect(validateBtn, &QPushButton::clicked, this, &MainWindow::onValidate);
     connect(testStringBtn, &QPushButton::clicked, this, &MainWindow::onTestString);
 
-    //arranca con un DFA en blanco para no obligar a crear uno antes de poder usar la ventana
-    dfaNames.insert("DFA 1");
-    dfas.insert(DFA());
-    dfaSelector->addItem("DFA 1");
-    dfaSelector->setCurrentIndex(0);
-    onSelectDfa(0);
+    return wrapScroll(page);
 }
 
 DFA& MainWindow::currentDfa() {
@@ -174,7 +215,50 @@ void MainWindow::onNewDfa() {
 
     dfaNames.insert(stdName);
     dfas.insert(DFA());
+    unionSourceA.insert(-1);
+    unionSourceB.insert(-1);
     dfaSelector->addItem(QString::fromStdString(stdName));
+    unionASelector->addItem(QString::fromStdString(stdName));
+    unionBSelector->addItem(QString::fromStdString(stdName));
+    dfaSelector->setCurrentIndex(dfaSelector->count() - 1);
+}
+
+void MainWindow::onComputeUnion() {
+    int indexA = unionASelector->currentIndex();
+    int indexB = unionBSelector->currentIndex();
+    if (indexA < 0 || indexB < 0) {
+        return;
+    }
+
+    LinkedList<std::string> errors;
+    DFA result = dfas.get(indexA).unionWith(dfas.get(indexB), errors);
+
+    if (errors.getSize() > 0) {
+        QString msg;
+        for (int i = 0; i < errors.getSize(); i++) {
+            msg += QString::fromStdString(errors.get(i)) + "\n";
+        }
+        QMessageBox::warning(this, "Union", msg);
+        return;
+    }
+
+    std::string name = dfaSelector->itemText(indexA).toStdString() + " U " + dfaSelector->itemText(indexB).toStdString();
+    std::string base = name;
+    int suffix = 2;
+    while (dfaNames.contains(name)) {
+        name = base + " (" + std::to_string(suffix) + ")";
+        suffix++;
+    }
+
+    dfaNames.insert(name);
+    dfas.insert(result);
+    unionSourceA.insert(indexA);
+    unionSourceB.insert(indexB);
+
+    QString qname = QString::fromStdString(name);
+    dfaSelector->addItem(qname);
+    unionASelector->addItem(qname);
+    unionBSelector->addItem(qname);
     dfaSelector->setCurrentIndex(dfaSelector->count() - 1);
 }
 
@@ -231,7 +315,7 @@ void MainWindow::onAddTransition() {
 
 void MainWindow::onValidate() {
     std::string report = captureCout([this]() { currentDfa().printValidationReport(); });
-    log->appendPlainText(QString::fromStdString(report));
+    buildLog->appendPlainText(QString::fromStdString(report));
 }
 
 void MainWindow::onTestString() {
@@ -245,12 +329,24 @@ void MainWindow::onTestString() {
     }
     block += QString("Result: %1\n").arg(accepted ? "ACCEPTED" : "REJECTED");
 
-    log->appendPlainText(block);
+    int sourceA = unionSourceA.get(currentIndex);
+    int sourceB = unionSourceB.get(currentIndex);
+    if (sourceA >= 0 && sourceB >= 0) {
+        LinkedList<std::string> traceA;
+        LinkedList<std::string> traceB;
+        bool acceptedA = dfas.get(sourceA).runString(input, traceA);
+        bool acceptedB = dfas.get(sourceB).runString(input, traceB);
+        block += QString("%1: %2\n").arg(dfaSelector->itemText(sourceA), acceptedA ? "ACCEPTED" : "REJECTED");
+        block += QString("%1: %2\n").arg(dfaSelector->itemText(sourceB), acceptedB ? "ACCEPTED" : "REJECTED");
+        block += QString("Union: %1\n").arg(accepted ? "ACCEPTED" : "REJECTED");
+    }
+
+    testLog->appendPlainText(block);
 }
 
-void MainWindow::refreshLog() {
+void MainWindow::refreshBuildLog() {
     std::string summary = captureCout([this]() { currentDfa().printDFA(); });
-    log->setPlainText(QString::fromStdString(summary));
+    buildLog->setPlainText(QString::fromStdString(summary));
 }
 
 void MainWindow::refreshDeltaView() {
@@ -275,7 +371,6 @@ void MainWindow::refreshDeltaView() {
     for (int i = 0; i < states.getSize(); i++) {
         std::string state = states.get(i);
 
-        //flecha para el estado inicial, asterisco para los estados de aceptacion, igual que pide la especificacion
         std::string label = state;
         if (state == initial) {
             label = QString::fromUtf8("→ ").toStdString() + label;
@@ -303,7 +398,6 @@ void MainWindow::refreshDeltaView() {
     deltaTable->setVerticalHeaderLabels(rowHeaders);
     deltaTable->resizeColumnsToContents();
 
-    //la misma delta pero en notacion compacta de flecha: q0-a->q1
     QString arrowLines;
     for (int k = 0; k < transitions.getSize(); k++) {
         Transition transition = transitions.get(k);
@@ -313,6 +407,6 @@ void MainWindow::refreshDeltaView() {
 }
 
 void MainWindow::refreshAll() {
-    refreshLog();
+    refreshBuildLog();
     refreshDeltaView();
 }

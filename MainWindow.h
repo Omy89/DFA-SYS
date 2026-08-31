@@ -5,19 +5,26 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QTableWidget>
+#include <QTabWidget>
 
 #include "DFA.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-    //varios DFAs en memoria (no se guardan a disco): nombre y automata van paralelos por indice, como states/alphabet en DFA
     LinkedList<std::string> dfaNames;
     LinkedList<DFA> dfas;
     int currentIndex;
 
+    LinkedList<int> unionSourceA;
+    LinkedList<int> unionSourceB;
+
     QComboBox* dfaSelector;
     QPushButton* newDfaBtn;
+
+    QComboBox* unionASelector;
+    QComboBox* unionBSelector;
+    QPushButton* computeUnionBtn;
 
     QLineEdit* stateInput;
     QLineEdit* symbolInput;
@@ -30,10 +37,11 @@ class MainWindow : public QMainWindow {
     QTableWidget* deltaTable;
     QPlainTextEdit* deltaList;
 
+    QPlainTextEdit* buildLog;
+
     QLineEdit* testStringInput;
     QPushButton* testStringBtn;
-
-    QPlainTextEdit* log;
+    QPlainTextEdit* testLog;
 
 public:
     MainWindow(QWidget* parent = nullptr);
@@ -53,17 +61,21 @@ private slots:
 
     void onAddTransition();
 
+    void onComputeUnion();
+
     void onValidate();
 
     void onTestString();
 
 private:
+    QWidget* buildCreatePage();
+
+    QWidget* buildTestPage();
+
     DFA& currentDfa();
 
-    //printDFA()/printValidationReport() escriben a std::cout, asi que lo redirigimos a un string para mostrarlo en la ventana
-    void refreshLog();
+    void refreshBuildLog();
 
-    //redibuja la tabla delta (estados x alfabeto) y la lista en notacion de flecha "origen-simbolo->destino"
     void refreshDeltaView();
 
     void refreshAll();

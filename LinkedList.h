@@ -8,8 +8,6 @@ struct Node {
     T data;
     Node* next;
 
-    //data must be set via the initializer list (not assigned in the body), otherwise
-    //the compiler default-constructs "data" first, which breaks for any T with no default constructor
     Node(T data) : data(data), next(nullptr) {}
 };
 
@@ -48,7 +46,6 @@ public:
         }
     }
 
-    //rule of three: si hay destructor y copy constructor, tambien hace falta el copy assignment
     LinkedList<T>& operator=(const LinkedList<T>& other) {
         if (this == &other) {
             return *this;
@@ -106,7 +103,6 @@ public:
         return false;
     }
 
-    //referencia y no copia: asi se puede editar un elemento del medio de la lista (ej. el DFA seleccionado) sin sacarlo y reinsertarlo
     T& get(int index) {
         if (index < 0 || index >= size) {
             throw std::out_of_range("Index out of range");
